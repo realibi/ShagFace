@@ -110,13 +110,26 @@
                 dataType: 'json',
                 success: async function (data) {
                     if(data["error"]){
-                        alert(data["error"])
+                        alert(data["error"]);
                     }
                     else{
-                        await sleep(3);
-                        for(var i = 1; i <= 5; i++){
-                            $("#face_position")[0].src = "http://127.0.0.1:8000/static/preview_faces/face" + i + ".jpg"
-                            await sleep(3);
+                        var is_ended = false;
+                        while(!is_ended){
+                            $.ajax({
+                                url: '{% url "main:get_current_photos"%}',
+                                data: {
+                                'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val(),
+                                },
+                                type: "POST",
+                                dataType: 'json',
+                                success: function (data) {
+                                    is_ended = data["is_ended"];
+                                    $("#face_position")[0].src = "/static/preview_faces/face" + data["count"] + ".jpg";
+                                },
+                                async: false,
+                            });
+                            await sleep(1);
+                            console.log(is_ended);
                         }
                         $("#face_position")[0].src = "{% static "preview_faces/face1.jpg"%}";
                         img.src = "{% static "images/white.png"%}";

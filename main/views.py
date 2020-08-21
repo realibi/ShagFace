@@ -44,6 +44,8 @@ class CameraAction():
     cam = cam
     timed_value = TimedValue(TIME_TO_WAIT)
     current_student = None
+    photo_count = 1
+    is_ended = False
 
 class Logout(View):
     def post(self, request):
@@ -201,6 +203,7 @@ class Visits(View):
 
 def gen_student():
     count = 1
+    CameraAction.is_ended = False
     while True:
         if not CameraAction.IS_STOP and CameraAction.timed_value.has_time_passed() and count <= STUDENT_PHOTOS:
             frame = CameraAction.cam.get_frame_as_image()
@@ -208,6 +211,7 @@ def gen_student():
             if is_added:
                 CameraAction.timed_value = TimedValue(TIME_TO_WAIT)
                 count += 1
+                CameraAction.photo_count = count
             if count > STUDENT_PHOTOS:
                 train()
             yield(b'--frame\r\n'
@@ -220,6 +224,8 @@ def gen_student():
             del CameraAction.cam
             CameraAction.cam = None
             CameraAction.IS_STOP = True
+            CameraAction.photo_count = 1
+            CameraAction.is_ended = True
             break
         else:
             frame = CameraAction.cam.get_frame_as_image()
@@ -305,3 +311,8 @@ class StartStudentStream(View):
         CameraAction.IS_STOP = False
 
         return JsonResponse({"success": "true"})
+
+
+class GetCurrentPhotos(View):
+    def post(self, request):
+        return JsonResponse({"count": CameraAction.photo_count, "is_ended": CameraAction.is_ended})

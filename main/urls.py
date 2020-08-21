@@ -18,6 +18,7 @@ urlpatterns = [
     path('add_student', views.AddStudentStreamView.as_view(), name="add_student"),
     path('start_stop_stream', views.StartStopStream.as_view(), name="start_stop_stream"),
     path('start_student_stream', views.StartStudentStream.as_view(), name="start_student_stream"),
+    path('get_current_photos', views.GetCurrentPhotos.as_view(), name="get_current_photos"),
     path('download/(?P<path>.*)$', views.Download.as_view(), name="download"),
 
 ]

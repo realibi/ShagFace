@@ -58,11 +58,11 @@ def recognise_face(img):
     )
 
     for (x, y, w, h) in faces:
-        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        cv2.rectangle(img, (x, y), (x + w, y + h), (255, 255, 0), 2)
         student_id, confidence = recognizer.predict(gray[y:y + h, x:x + w])
         label = "unknown"
         # Проверяем что лицо распознано
-        if (confidence > 85 and confidence < 105):
+        if (confidence > 50 and confidence < 105):
             b,g,r,a = 255,255,255,1
             student = Student.objects.filter(id=student_id).first()
 
@@ -112,7 +112,7 @@ def recognise_face_without_title(img):
     )
 
     for (x, y, w, h) in faces:
-        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        cv2.rectangle(img, (x, y), (x + w, y + h), (255, 255, 0), 2)
     ret, jpeg = cv2.imencode('.jpg', img)
     return jpeg.tobytes()
 
