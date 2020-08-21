@@ -202,32 +202,30 @@ class Visits(View):
 def gen_student():
     count = 1
     while True:
-        if not CameraAction.cam:
-            blank_image = create_blank(500, 500, (250,250,250)) 
-            yield(b'--frame\r\n'
-                b'Content-Type: image/jpeg\r\n\r\n' + blank_image +  b'\r\n\r\n')
         if not CameraAction.IS_STOP and CameraAction.timed_value.has_time_passed() and count <= STUDENT_PHOTOS:
             frame = CameraAction.cam.get_frame_as_image()
             is_added, image = add_student(frame, CameraAction.current_student, count)
             if is_added:
                 CameraAction.timed_value = TimedValue(TIME_TO_WAIT)
                 count += 1
-            # if count > STUDENT_PHOTOS:
-            #     train()
+            if count > STUDENT_PHOTOS:
+                train()
             yield(b'--frame\r\n'
                 b'Content-Type: image/jpeg\r\n\r\n' + image + b'\r\n\r\n')
-        elif count > STUDENT_PHOTOS:
-            train()
-            CameraAction.cam = None
-            CameraAction.IS_STOP = True
+        elif not CameraAction.cam:
             blank_image = create_blank(500, 500, (250,250,250)) 
             yield(b'--frame\r\n'
                 b'Content-Type: image/jpeg\r\n\r\n' + blank_image +  b'\r\n\r\n')
-        # else:
-        #     frame = CameraAction.cam.get_frame_as_image()
-        #     ret, jpeg = cv2.imencode('.jpg', frame)
-        #     yield(b'--frame\r\n'
-        #         b'Content-Type: image/jpeg\r\n\r\n' + jpeg.tobytes() +  b'\r\n\r\n')
+        elif count > STUDENT_PHOTOS:
+            del CameraAction.cam
+            CameraAction.cam = None
+            CameraAction.IS_STOP = True
+            break
+        else:
+            frame = CameraAction.cam.get_frame_as_image()
+            img = recognise_face_without_title(frame)
+            yield(b'--frame\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + img +  b'\r\n\r\n')
 
 @gzip_page
 def add_student_stream(request):
@@ -281,8 +279,11 @@ class StartStopStream(View):
         if is_stop == "true":
             if CameraAction.cam:
                 CameraAction.IS_STOP = True
-                #del CameraAction.cam
+                del CameraAction.cam
+                CameraAction.cam = None
         elif is_stop == "false":
+            if not CameraAction.cam:
+                CameraAction.cam = Camera()
                 CameraAction.IS_STOP = False
         return JsonResponse({"success": "true"})
 
@@ -291,15 +292,13 @@ class StartStudentStream(View):
     def post(self, request):
         email = post_parameter(request, "email")
         fullname = post_parameter(request, "fullname")
-        parent_number = post_parameter(request, "parent_number")
-        parent_telegram = post_parameter(request, "parent_telegram")
         group = post_parameter(request, "group")
         course = post_parameter(request, "course")
 
         if len(Student.objects.filter(email=email)) > 0:
             return JsonResponse({"error": "Такой пользователь уже существует!"})        
         
-        student  = Student.objects.create(email=email, fullname=fullname, parent_number=parent_number, parent_telegram=parent_telegram, group=group, course=course)
+        student  = Student.objects.create(email=email, fullname=fullname, group=group, course=course)
         CameraAction.current_student = student
         
         CameraAction.cam = Camera()

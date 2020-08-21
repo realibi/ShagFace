@@ -67,10 +67,10 @@ def recognise_face(img):
             student = Student.objects.filter(id=student_id).first()
 
             date_start = datetime.datetime.now()
-            date_start = date_start.replace(hour=0, minute=0)
+            date_start = date_start.replace(hour=0, minute=0, second=0)
 
             date_end = datetime.datetime.now()
-            date_end = date_start.replace(hour=23, minute=59)
+            date_end = date_start.replace(hour=23, minute=59, second=59)
 
             visits = Visit.objects.filter(visit_time__gte=date_start, visit_time__lte=date_end, student=student)
             if len(visits) == 0:
