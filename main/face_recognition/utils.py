@@ -44,7 +44,11 @@ def recognise_face(img):
     recognizer = cv2.face.LBPHFaceRecognizer_create()
 
     recognizer_path = str(pathlib.Path(__file__).parent.absolute()) + "/face.yml"
-    recognizer.read(recognizer_path)
+    label = ""
+    try:
+        recognizer.read(recognizer_path)
+    except:
+        label = "unknown"
 
     cascadePath = str(pathlib.Path(__file__).parent.absolute()) + "/haarcascade_frontalface_default.xml"
     #cascadePath = "haarcascade_frontalface_default.xml"
@@ -59,12 +63,19 @@ def recognise_face(img):
 
     for (x, y, w, h) in faces:
         cv2.rectangle(img, (x, y), (x + w, y + h), (255, 255, 0), 2)
-        student_id, confidence = recognizer.predict(gray[y:y + h, x:x + w])
-        label = "unknown"
+        student_id = None
+        confidence = 51
+        if label is not "unknown":
+            student_id, confidence = recognizer.predict(gray[y:y + h, x:x + w])
+        
         # Проверяем что лицо распознано
-        if (confidence > 50 and confidence < 105):
+        if (confidence > 50 and confidence < 105, ):
             b,g,r,a = 255,255,255,1
-            student = Student.objects.filter(id=student_id).first()
+            student = None
+            try:
+                student = None if not student_id else Student.objects.get(id=student_id)
+            except:
+                student = None
 
             date_start = datetime.datetime.now()
             date_start = date_start.replace(hour=0, minute=0, second=0)
@@ -73,7 +84,7 @@ def recognise_face(img):
             date_end = date_start.replace(hour=23, minute=59, second=59)
 
             visits = Visit.objects.filter(visit_time__gte=date_start, visit_time__lte=date_end, student=student)
-            if len(visits) == 0:
+            if len(visits) == 0 and student:
                 Visit.objects.create(student=student)
 
                 if len(BotUser.objects.filter(student=student)) > 0:
@@ -159,3 +170,7 @@ def delete_images(student):
     for face in student.images_urls.all():
         os.remove(face.absolute_path)
         face.delete()
+
+def clear_yml():
+    recognizer_path = str(pathlib.Path(__file__).parent.absolute()) + "/face.yml"
+    open(recognizer_path, "w").close()

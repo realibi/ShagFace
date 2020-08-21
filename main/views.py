@@ -182,8 +182,13 @@ class DeleteStudent(View):
             return render(request, 'delete_student.html', {
                 "delete_error" : "Не удалось найти пользователя для удаления!",
             })
+        
         delete_images(student)
         student.delete()
+        if len(Student.objects.all()) == 0:
+            clear_yml()
+        else:
+            train()
         return render(request, 'delete_student.html', {
             "success" : "Вы успешно удалили студента!",
             "students": Student.objects.all()
